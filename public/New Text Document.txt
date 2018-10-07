@@ -1,0 +1,1 @@
+'http://www.nseindia.com/content/historical/DERIVATIVES/'+ myear + '/' + uppe(mmonth) + '/fo' + mdate + uppe(mmonth) + myear + 'bhav.csv.zip'
