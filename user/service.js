@@ -1,345 +1,165 @@
 var Q = require('q');
-//var uniqid = require('uniqid');
-//var userModel = require('./model')
+var userModel = require('./model')
 var fs = require('fs');
 var request = require('request');
 
-//var dialougeFolowService = require('../service/dialougeFlowService')
-
-exports.userInput = function(requstObj){
- var deferred = Q.defer();
- var sessionId = uniqid();
- //console.log(JSON.stringify(appliances));
- userModel.getUser(requstObj).then(function(success){
-	try{
-		if(success && success.length){
-			dialougeFolowService.DialougeFlow(sessionId,requstObj.text).then(function(success) {
-				deferred.resolve({'resolvedQuery' :  success.resolvedQuery,'parameters' : success.parameters})
-			},function(faliure) {
-				console.log("faliure-------------->",faliure);
-				deferred.reject(faliure)
-			})
-			// var appliances = success[0].rooms[0].appliances;
-			// var applianceEntries = [];
-			// var commandEntries = [];
-			// for(var i = 0 ; i < appliances.length ; i++){
-			// 	applianceEntries.push( {
-			// 		value: appliances[i].name.toLowerCase(),
-			// 		synonyms: [appliances[i].name,appliances[i].name.toUpperCase()]
-			// 	})
-			// 	for(var j = 0 ; j < appliances[i].commands.length ; j++){
-			// 		var splitCommand = appliances[i].commands[j].command
-			// 		var subCommand;
-			// 		var trueCommand;
-			// 		var falseCommand;
-			// 		if(splitCommand.includes("/")){
-			// 			if( splitCommand.includes(" ")){
-			// 				splitCommand = splitCommand.split(" ");
-			// 				subCommand = splitCommand[1].split("/")
-			// 				trueCommand = splitCommand[0] + ' ' +subCommand[0];
-			// 				falseCommand =  splitCommand[0] + ' ' +subCommand[1]
-			// 			}else{
-			// 				splitCommand = splitCommand.split("/")
-			// 				trueCommand = splitCommand[0];
-			// 				falseCommand =  splitCommand[1];
-			// 			}
-			// 			commandEntries.push( {
-			// 				value: trueCommand.toLowerCase(),
-			// 				synonyms: [trueCommand,trueCommand.toUpperCase()]
-			// 			})
-			// 			commandEntries.push( {
-			// 				value: falseCommand.toLowerCase(),
-			// 				synonyms: [falseCommand,falseCommand.toUpperCase()]
-			// 			})
-			// 		}else{
-			// 			commandEntries.push( {
-			// 				value: splitCommand.toLowerCase(),
-			// 				synonyms: [splitCommand,splitCommand.toUpperCase()]
-			// 			})
-			// 		}
-			// 	}
-			// }
-
-
-			// var traininAppliance = {
-			// 	name : "appliance",
-			// 	entries : applianceEntries
-			// }
-			// dialougeFolowService.userEntities(sessionId,traininAppliance).then(function(success) {
-			// 	var trainingCommand = {
-			// 		name : "command",
-			// 		entries : commandEntries
-			// 	}
-			// 	dialougeFolowService.userEntities(sessionId,trainingCommand).then(function(success) {
-
-			// 		dialougeFolowService.DialougeFlow(sessionId,requstObj.text).then(function(success) {
-			// 			//console.log("Callback to plainText :",JSON.stringify(success));
-			// 			deferred.resolve({'resolvedQuery' :  success.resolvedQuery,'parameters' : success.parameters})
-			// 		},function(faliure) {
-			// 			deferred.reject(faliure)
-			// 		})
-			// 	},function(faliure) {
-			// 		deferred.reject(faliure)
-			// 	})
-			// 	//deferred.resolve(success)
-			// },function(faliure) {
-			// 	deferred.reject(faliure)
-			// })
-		}else{
-			let err = new Error("User not found.");
-			deferred.reject(err);
-
-		}
-
-	}catch(error){
-		console.log(error);
-	}
- },function(error){
-	deferred.reject(faliure)
- })
- return deferred.promise;
-}
-
-exports.fetchDailyBhavCopy = function(requstObj){
- var deferred = Q.defer();
- var request = require('request');
- var fs = require('fs');
- var today = new Date();
- var year = today.getFullYear();
- var date = today.getDate();
- var month = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
- var currentMonth = today.getMonth();
- var url ='https://www.nseindia.com/content/historical/DERIVATIVES/'+ year + '/' + month[currentMonth] + '/fo' + '05' + month[currentMonth] + year + 'bhav.csv.zip'
- console.log(url);
- try{
-   request(url)
-     .pipe(fs.createWriteStream(__dirname+'/fo' + '05' + month[currentMonth] + year + 'bhav.csv.zip'))
-     .on('close', function () {
-       console.log('File written!');
-       var extract = require('extract-zip')
-       extract(__dirname+'/fo' + '05' + month[currentMonth] + year + 'bhav.csv.zip', {dir: __dirname}, function (err) {
-        // extraction is complete. make sure to handle the err
-       console.log(err);
-       console.log("Extract complete");
-       deferred.resolve("Extract complete")
-       })
-
-     });
- }catch(error){
-   console.error(error);
-   deferred.reject("error occured");
- }
-
-
-
- // userModel.bulkInsertBhavCopy(requstObj).then(function(success){
- //
- // },function(error){
-	// deferred.reject(faliure)
- // })
- return deferred.promise;
-}
-
-exports.knxUpload = function(requstObj,sessionId,id,newApplianceEntities,newCommandEntities){
+exports.fetchDailyBhavCopy = function(){
 	var deferred = Q.defer();
-	if(!sessionId){
-		sessionId = uniqid();
-	}
-
-	userModel.saveUser(requstObj).then(function(success) {
-		console.log("Done.")
-		fs.unlink(__dirname+'/userFile/'+id+'.json', function(error) {
-		    if (error) {
-		        throw error;
-        		deferred.reject(error);
-			}
-			var response = {"status":{
-		        "code": 200,
-		        "errorType": "success"
-		    }
-			}
-			console.log('Deleted '+id+'.json');
-			(function (exports) {
-				'use strict';
-
-				var Sequence = exports.Sequence || require('sequence').Sequence
-				  , sequence = Sequence.create()
-				  , err
-				  ;
-
-				sequence
-				  .then(function (next) {
-					if(newApplianceEntities.length){
-						var applianceEntityId = "84431de8-b750-4dd5-8598-cdb81c225cff" ;
-						updateDialougeFlowEntities(newApplianceEntities,applianceEntityId).then(function(success){
-							next(false,success)
-							//deferred.resolve(success)
-						},function(error){
-							next(error,false)
-							//deferred.reject(error);
-						})
+	var request = require('request');
+	var fs = require('fs');
+	var today = new Date();
+	var year = today.getFullYear();
+	var date = today.getDate();
+	date = pad(date);
+	var month = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+	var currentMonth = today.getMonth();
+	(function (exports) {
+		'use strict';
+	
+		var Sequence = exports.Sequence || require('sequence').Sequence
+		, sequence = Sequence.create()
+		, err
+		;
+	
+		sequence
+		.then(function (next) {
+			//zip download code
+			try{
+				var url ='https://www.nseindia.com/content/historical/DERIVATIVES/'+ year + '/' + month[currentMonth] + '/fo' + date + month[currentMonth] + year + 'bhav.csv.zip'
+				console.log(url);
+				const req = request
+				.get(url)
+				.on('response', function (res) {
+					if (res.statusCode === 200) {
+						req.pipe(fs.createWriteStream(__dirname+'/zip/fo' + date + month[currentMonth] + year + 'bhav.csv.zip'))
+						next();
 					}else{
-						var response = {"status": {
-							"code": 200,
-							"errorType": "success"
-						}}
-						next(false,response)
-						//deferred.resolve();
+						console.log("URL not found.")
+						deferred.reject("Invalid URL.");
 					}
-				  })
-				  .then(function (next, error, response) {
-					if(newCommandEntities.length){
-						var commandEntityId = "39583666-049d-4b42-8c71-35425fcc41e5" ;
-						updateDialougeFlowEntities(newCommandEntities,commandEntityId).then(function(success){
-							next(false,success)
-							//deferred.resolve(success)
-						},function(error){
-							next(error,false)
-							//deferred.reject(error);
-						})
-					}else{
-						var response = {"status": {
-							"code": 200,
-							"errorType": "success"
-						}}
-						next(false,response)
-					}
-				  })
-				  .then(function (next, error, response) {
-						if(error){
-							deferred.reject(error);
-						}else{
-							deferred.resolve(response);
-						}
-				  });
-
-			  // so that this example works in browser and node.js
-			  }('undefined' !== typeof exports && exports || new Function('return this')()));
-		    //deferred.resolve(response);
-		});
-
-	/*	 */
-/*		//console.log(success);
-		var appliances = success.rooms[0].appliances;
-		//console.log(JSON.stringify(appliances));
-
-		var applianceEntries = [];
-		var commandEntries = [];
-		try{
-			for(var i = 0 ; i < appliances.length ; i++){
-				applianceEntries.push( {
-					value: appliances[i].name.toLowerCase(),
-					synonyms: [appliances[i].name,appliances[i].name.toUpperCase()]
 				})
-				for(var j = 0 ; j < appliances[i].commands.length ; j++){
-					var splitCommand = appliances[i].commands[j].command
-					var subCommand;
-					var trueCommand;
-					var falseCommand;
-					if(splitCommand.includes("/")){
-						if( splitCommand.includes(" ")){
-							splitCommand = splitCommand.split(" ");
-							subCommand = splitCommand[1].split("/")
-							trueCommand = splitCommand[0] + ' ' +subCommand[0];
-							falseCommand =  splitCommand[0] + ' ' +subCommand[1]
-						}else{
-							splitCommand = splitCommand.split("/")
-							trueCommand = splitCommand[0];
-							falseCommand =  splitCommand[1];
-						}
-						commandEntries.push( {
-							value: trueCommand.toLowerCase(),
-							synonyms: [trueCommand,trueCommand.toUpperCase()]
-						})
-						commandEntries.push( {
-							value: falseCommand.toLowerCase(),
-							synonyms: [falseCommand,falseCommand.toUpperCase()]
-						})
-					}else{
-						commandEntries.push( {
-							value: splitCommand.toLowerCase(),
-							synonyms: [splitCommand,splitCommand.toUpperCase()]
-						})
-					}
+				// request(url, function (error, response, body) {
+				// 	console.log('error:', error); // Print the error if one occurred
+				// 	console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
+				// 	console.log('body:', body); // Print the HTML for the Google homepage.
+				// 	if(response.statusCode === 404){
+				// 		deferred.reject("error occured.");
+				// 	}
+				//   })
+				// .pipe(fs.createWriteStream(__dirname+'/zip/fo' + date + month[currentMonth] + year + 'bhav.csv.zip'))
+				// .on('close', function () {
+				// 	next();
+				// });
+			}catch(error){
+				console.log(error);
+				deferred.reject("error occured.");
+			}
+			
+		})
+		.then(function (next) {
+			//csv extract
+			var extract = require('extract-zip')
+			extract(__dirname+'/zip/fo' + date + month[currentMonth] + year + 'bhav.csv.zip', {dir: __dirname+'/extract/'}, function (err) {
+				// extraction is complete. make sure to handle the err
+				if(err){
+					console.log(err);
+					deferred.reject("error occured.");
+				}else{
+					next();
 				}
+			});
+		})
+		.then(function (next) {
+				//create bulk array
+				var bulkArr = [];
+				const csvFilePath=__dirname+'/extract/'+'/fo' + date + month[currentMonth] + year + 'bhav.csv';
+				const csv=require('csvtojson')
+				csv()
+				.fromFile(csvFilePath)
+				.then((jsonObj)=>{
+					for (let index = 0; index < jsonObj.length; index++) {
+						var STRIKE_PR = parseInt(jsonObj[index].STRIKE_PR);
+						var CONTRACTS = parseInt(jsonObj[index].CONTRACTS);
+						var VAL_INLAKH = parseInt(jsonObj[index].VAL_INLAKH);
+						var OPEN = parseFloat(jsonObj[index].OPEN);
+						var HIGH = parseFloat(jsonObj[index].HIGH);
+						var LOW = parseFloat(jsonObj[index].LOW);
+						var CLOSE = parseFloat(jsonObj[index].CLOSE);
+						var SETTLE_PR = parseFloat(jsonObj[index].SETTLE_PR);
+						var OPEN_INT = parseFloat(jsonObj[index].OPEN_INT);
+						var CHG_IN_OI = parseFloat(jsonObj[index].CHG_IN_OI);
+
+						bulkArr.push([jsonObj[index].INSTRUMENT,
+							jsonObj[index].SYMBOL,
+							jsonObj[index].EXPIRY_DT,
+							STRIKE_PR,
+							jsonObj[index].OPTION_TYP,
+							OPEN,
+							HIGH,
+							LOW,
+							CLOSE,
+							SETTLE_PR,
+							CONTRACTS,
+							VAL_INLAKH,
+							OPEN_INT,
+							CHG_IN_OI,
+							jsonObj[index].TIMESTAMP]);
+						
+					}
+					next(bulkArr);
+				});
+		})
+		.then(function (next, bulkArr) {
+			var imageFullPathName = __dirname+'/extract/'+'/fo' + date + month[currentMonth] + year + 'bhav.csv'
+			fs.unlink(imageFullPathName, function(err){
+			if (err) {
+				if (err.code != 'ENOENT') {
+				// handle actual errors here
+				console.error("Error in call to fs.unlink", err);
+				}else{
+					console.log("File does not exist");
+					// else there was no file, handle that if you need to
+			
+				}
+			}else{
+					// else delete success, handle that if you need to
+					console.log("csv file delete succesfull!!!")
 			}
-
-		}catch(error){
-			console.log(error);
-		}
-
-		console.log("Starting Training.");
-		var traininAppliance = {
-			name : "appliance",
-			entries : applianceEntries
-		}
-		console.log("Tranning Appliance.");
-
-		dialougeFolowService.developerEntities(traininAppliance,"turn on fan").then(function(success) {
-			var trainingCommand = {
-				name : "command",
-				entries : commandEntries
+			});
+			next(bulkArr);
+		})
+		.then(function (next, bulkArr) {
+			var imageFullPathName = __dirname+'/zip/'+'/fo' + date + month[currentMonth] + year + 'bhav.csv.zip'
+			fs.unlink(imageFullPathName, function(err){
+			if (err) {
+				if (err.code != 'ENOENT') {
+				// handle actual errors here
+				console.error("Error in call to fs.unlink", err);
+				}else{
+					console.log("File does not exist");
+					// else there was no file, handle that if you need to
+			
+				}
+			}else{
+					// else delete success, handle that if you need to
+					console.log("zip file delete succesfull!!!")
 			}
-			console.log("Tranning commands.");
-
-			dialougeFolowService.developerEntities(sessionId,trainingCommand,"turn on fan").then(function(success) {
-				deferred.resolve(success)
-			},function(faliure) {
-				deferred.reject(faliure)
-			})
-			deferred.resolve(success)
-		},function(faliure) {
-			deferred.reject(faliure)
-		})*/
-		//deferred.resolve(success)
-	},function(faliure) {
-		deferred.reject(faliure)
-	});
-
-	return deferred.promise;
-   }
-
-exports.getUser = function(userDetails) {
-	var deferred = Q.defer();
-
-	userModel.getUser(userDetails)
-	.then(function(success){
-		deferred.resolve(success);
-	}, function(faliure){
-		deferred.reject(faliure);
-	});
-
-	return deferred.promise;
+			});
+			next(bulkArr);
+		})
+		.then(function (next, bulkArr) {
+				userModel.bulkInsertBhavCopy(bulkArr).then(function(success){
+					deferred.resolve(success);
+				},function(error){
+					console.error(error);
+					deferred.reject("error occured");
+				})
+		});
+	// so that this example works in browser and node.js
+	}('undefined' !== typeof exports && exports || new Function('return this')()));
+ return deferred.promise;
 }
 
-var updateDialougeFlowEntities = function(data,entityId){
-	var deferred = Q.defer();
-	console.log("id-------------",entityId)
-	var commandObj = [];
-	try{
-		for(var i = 0 ; i < data.length ; i++){
-			commandObj.push({
-				"synonyms": [
-					data[i],
-					data[i].toUpperCase()
-				],
-				"value": data[i]
-			  });
-		}
-	}catch(e){
-		console.log(e);
-	}
-	request.post({
-	headers: {
-		'Authorization': 'Bearer 732468342f8d4b0e988245fc3ff63dde',
-		'Content-Type' : 'application/json'
-		},
-	url:   'https://api.dialogflow.com/v1/entities/'+entityId+'/entries?v=20150910',
-	body:    JSON.stringify(commandObj)
-	}, function(error, response, body){
-		console.log("error----------------->",error);
-		console.log("body================>",body);
-		deferred.resolve(body);
-	});
-	return deferred.promise;
+function pad(n) {
+    return (n < 10) ? ("0" + n) : n;
 }
