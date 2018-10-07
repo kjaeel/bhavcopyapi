@@ -16,19 +16,19 @@ var forEachAsync = require('forEachAsync').forEachAsync
 var initialIndex = 0;
 var conditionIndex = 1000;
 var bulkArr = [];
-const csvFilePath='C:\\Users\\Admin\\Desktop\\workspace\\bhavcopyapi\\public\\fo05OCT2018bhav.csv'
+const csvFilePath='C:\\Users\\Home\\Documents\\GitHub\\bhavcopyapi\\public\\fo05OCT2018bhav.csv'
 const csv=require('csvtojson')
 csv()
 .fromFile(csvFilePath)
 .then((jsonObj)=>{
-    var loopAsyncArray = [];
+ /*   var loopAsyncArray = [];
     for (let index = 0; index < 50; index++) {
         loopAsyncArray.push(index);
     }
-
+*/
   // waits for one request to finish before beginning the next
-  forEachAsync(loopAsyncArray, function (next, element, index, loopAsyncArray) {
-    for (let index = initialIndex; index < conditionIndex; index++) {
+  //forEachAsync(loopAsyncArray, function (next, element, index, loopAsyncArray) {
+    for (let index = 0; index < jsonObj.length; index++) {
         var STRIKE_PR = parseInt(jsonObj[index].STRIKE_PR);
         var CONTRACTS = parseInt(jsonObj[index].CONTRACTS);
         var VAL_INLAKH = parseInt(jsonObj[index].VAL_INLAKH);
@@ -97,7 +97,7 @@ csv()
     var con = mysql.createConnection({
     host: "localhost",
     user : 'root',
-    password : 'password',
+    password : '',
     database : 'bhavcopy' 
     });
 
@@ -115,7 +115,7 @@ csv()
                 con.end(function(err) {
                     //             // The connection is terminated now
                                 console.log("Connection is terminated now.");
-                                next()
+                                //next()
                 }); 
             }else{
                 console.log("Number of records inserted: " + result.affectedRows);
@@ -124,15 +124,15 @@ csv()
                                 console.log("Connection is terminated now.");
                                 initialIndex = conditionIndex;
                                 conditionIndex = conditionIndex+1000;
-                                next();
+                                //next();
                 }); 
             }
             
         });
     });
   
-  }).then(function () {
+  /*}).then(function () {
     console.log('All requests have finished');
-  });
+  });*/
 })
 

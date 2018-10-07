@@ -18,13 +18,13 @@ const config = {
     mysql: {
           host : 'localhost',
           user : 'root',
-          password : 'password',
-          database : 'bhavcopy'      
+          password : '',
+          database : 'bhavcopy'
     }
   },
   test: { },
   development: {
-    
+
     database : {
       host : ['hb-1-001.mbzq1s.0001.apse1.cache.amazonaws.com'],
       password : 'voot$redis@123'
@@ -34,7 +34,7 @@ const config = {
       userName : 'root',
       password : 'root',
       databaseName : 'bhavcopy'
-      
+
     }
   },
   production: {

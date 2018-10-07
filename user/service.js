@@ -1,10 +1,10 @@
 var Q = require('q');
-var uniqid = require('uniqid');
-var userModel = require('./model')
+//var uniqid = require('uniqid');
+//var userModel = require('./model')
 var fs = require('fs');
 var request = require('request');
 
-var dialougeFolowService = require('../service/dialougeFlowService')
+//var dialougeFolowService = require('../service/dialougeFlowService')
 
 exports.userInput = function(requstObj){
  var deferred = Q.defer();
@@ -56,11 +56,11 @@ exports.userInput = function(requstObj){
 			// 				value: splitCommand.toLowerCase(),
 			// 				synonyms: [splitCommand,splitCommand.toUpperCase()]
 			// 			})
-			// 		}				
+			// 		}
 			// 	}
 			// }
-			
-	
+
+
 			// var traininAppliance = {
 			// 	name : "appliance",
 			// 	entries : applianceEntries
@@ -71,7 +71,7 @@ exports.userInput = function(requstObj){
 			// 		entries : commandEntries
 			// 	}
 			// 	dialougeFolowService.userEntities(sessionId,trainingCommand).then(function(success) {
-					
+
 			// 		dialougeFolowService.DialougeFlow(sessionId,requstObj.text).then(function(success) {
 			// 			//console.log("Callback to plainText :",JSON.stringify(success));
 			// 			deferred.resolve({'resolvedQuery' :  success.resolvedQuery,'parameters' : success.parameters})
@@ -90,13 +90,53 @@ exports.userInput = function(requstObj){
 			deferred.reject(err);
 
 		}
-		
+
 	}catch(error){
 		console.log(error);
 	}
  },function(error){
 	deferred.reject(faliure)
  })
+ return deferred.promise;
+}
+
+exports.fetchDailyBhavCopy = function(requstObj){
+ var deferred = Q.defer();
+ var request = require('request');
+ var fs = require('fs');
+ var today = new Date();
+ var year = today.getFullYear();
+ var date = today.getDate();
+ var month = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+ var currentMonth = today.getMonth();
+ var url ='https://www.nseindia.com/content/historical/DERIVATIVES/'+ year + '/' + month[currentMonth] + '/fo' + '05' + month[currentMonth] + year + 'bhav.csv.zip'
+ console.log(url);
+ try{
+   request(url)
+     .pipe(fs.createWriteStream(__dirname+'/fo' + '05' + month[currentMonth] + year + 'bhav.csv.zip'))
+     .on('close', function () {
+       console.log('File written!');
+       var extract = require('extract-zip')
+       extract(__dirname+'/fo' + '05' + month[currentMonth] + year + 'bhav.csv.zip', {dir: __dirname}, function (err) {
+        // extraction is complete. make sure to handle the err
+       console.log(err);
+       console.log("Extract complete");
+       deferred.resolve("Extract complete")
+       })
+
+     });
+ }catch(error){
+   console.error(error);
+   deferred.reject("error occured");
+ }
+
+
+
+ // userModel.bulkInsertBhavCopy(requstObj).then(function(success){
+ //
+ // },function(error){
+	// deferred.reject(faliure)
+ // })
  return deferred.promise;
 }
 
@@ -121,12 +161,12 @@ exports.knxUpload = function(requstObj,sessionId,id,newApplianceEntities,newComm
 			console.log('Deleted '+id+'.json');
 			(function (exports) {
 				'use strict';
-			   
+
 				var Sequence = exports.Sequence || require('sequence').Sequence
 				  , sequence = Sequence.create()
 				  , err
 				  ;
-			   
+
 				sequence
 				  .then(function (next) {
 					if(newApplianceEntities.length){
@@ -172,12 +212,12 @@ exports.knxUpload = function(requstObj,sessionId,id,newApplianceEntities,newComm
 							deferred.resolve(response);
 						}
 				  });
-			   
+
 			  // so that this example works in browser and node.js
 			  }('undefined' !== typeof exports && exports || new Function('return this')()));
 		    //deferred.resolve(response);
 		});
-		
+
 	/*	 */
 /*		//console.log(success);
 		var appliances = success.rooms[0].appliances;
@@ -220,10 +260,10 @@ exports.knxUpload = function(requstObj,sessionId,id,newApplianceEntities,newComm
 							value: splitCommand.toLowerCase(),
 							synonyms: [splitCommand,splitCommand.toUpperCase()]
 						})
-					}				
+					}
 				}
 			}
-			
+
 		}catch(error){
 			console.log(error);
 		}
@@ -255,7 +295,7 @@ exports.knxUpload = function(requstObj,sessionId,id,newApplianceEntities,newComm
 	},function(faliure) {
 		deferred.reject(faliure)
 	});
-	
+
 	return deferred.promise;
    }
 
@@ -300,7 +340,6 @@ var updateDialougeFlowEntities = function(data,entityId){
 		console.log("error----------------->",error);
 		console.log("body================>",body);
 		deferred.resolve(body);
-	});	
+	});
 	return deferred.promise;
 }
- 

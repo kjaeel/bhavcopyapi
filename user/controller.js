@@ -1,9 +1,9 @@
 var userService = require('./service')
 var Q = require('q');
 var  util = require('../util.js')
-var jsonValidate = require('../service/jsonValidator');
+//var jsonValidate = require('../service/jsonValidator');
 var request = require('request');
-var quickSort = require('quick-sort');
+//var quickSort = require('quick-sort');
 
 function diff(A, B) {    return A.filter(function (a) {        return B.indexOf(a) == -1;    });}
 
@@ -27,6 +27,25 @@ exports.userInput = function (requstObj) {
 		deferred.resolve(response);
 	}
 	userService.userInput(requstObj).then(function (success) {
+		var response = {
+			status :200,
+			message:success
+		}
+		deferred.resolve(response)
+	},function (faliure) {
+		var response = {
+			status :401,
+			message:faliure
+		}
+		console.log("error---------------->",response);
+		deferred.reject(response)
+	})
+	return deferred.promise;
+};
+
+exports.fetchDailyBhavCopy = function () {
+	var deferred = Q.defer();
+	userService.fetchDailyBhavCopy().then(function (success) {
 		var response = {
 			status :200,
 			message:success
@@ -78,7 +97,7 @@ exports.knxUpload = function (id) {
 				  ;
 				sequence
 				  .then(function (next) {
-					var applianceEntityId = "84431de8-b750-4dd5-8598-cdb81c225cff" 
+					var applianceEntityId = "84431de8-b750-4dd5-8598-cdb81c225cff"
 					validateFromDialougeflow(applianceEntityId).then(function(success){
 						console.log("here in first then.")
 						var dialogflowEntities = [];
@@ -98,7 +117,7 @@ exports.knxUpload = function (id) {
 					});
 				  })
 				  .then(function (next, newApplianceEntities) {
-					var commandEntityId = "39583666-049d-4b42-8c71-35425fcc41e5" 
+					var commandEntityId = "39583666-049d-4b42-8c71-35425fcc41e5"
 					validateFromDialougeflow(commandEntityId).then(function(success){
 						var dialogflowEntities = [];
 						for(var i  = 0 ; i < success.entries.length ; i++){
@@ -143,7 +162,7 @@ exports.knxUpload = function (id) {
 											value: splitCommand.toLowerCase(),
 											synonyms: [splitCommand,splitCommand.toUpperCase()]
 										})
-									}				
+									}
 								}
 							}
 
@@ -178,7 +197,7 @@ exports.knxUpload = function (id) {
 						deferred.reject(response)
 					})
 				  });
-			   
+
 			  // so that this example works in browser and node.js
 			  }('undefined' !== typeof exports && exports || new Function('return this')()));
 		}else{									//invalid Json
@@ -187,14 +206,14 @@ exports.knxUpload = function (id) {
 				message:success
 			}
 			deferred.resolve(response)
-		}	
+		}
 	},function(error){
 		deferred.reject(error)
 	})
 }catch(e){
 	console.log("error===============================",e)
 }
-	
+
 	return deferred.promise;
 };
 
@@ -212,7 +231,7 @@ var validateFromDialougeflow = function(entityId){
 		//console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
 		console.log('type of body in user controller:', typeof(body)); // Print the HTML for the Google homepage.
 		var body = JSON.parse(body);
-		deferred.resolve(body); 
-	});	
+		deferred.resolve(body);
+	});
 	return deferred.promise;
 }

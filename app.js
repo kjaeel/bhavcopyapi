@@ -21,14 +21,14 @@ app.use(function (req, res, next) {
 });
 
 var connection = mysql.createConnection(config.mysql);
- 
+
 
 connection.connect(function(err) {
   if (err) {
     console.error('error connecting: ' + err.stack);
     return;
   }
- 
+
   console.log('mysql connection successfull connected as id ' + connection.threadId);
 });
 
@@ -36,16 +36,16 @@ connection.query('SELECT count(id) as final from bhavcopycore', function (error,
   if (error) throw error;
   console.log('The solution is: ', results[0].final);
 });
- 
+
 connection.end(function(err) {
   // The connection is terminated now
   console.log("Connection is terminated now.");
-}); 
+});
 
-//var userRoutes = require('./user/routes.js');
+var userRoutes = require('./user/routes.js');
 
 
-//app.use('/homeautomation/user/', userRoutes);
+app.use('/user/', userRoutes);
 
 
 app.listen(config.port, config.ip, () => {
