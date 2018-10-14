@@ -21,4 +21,12 @@ router.get('/fetchDailyBhavCopy', function (req, res) {
   })
 })
 
+router.get('/getBhavCopy', function (req, res) {
+  userController.getBhavCopy().then(function (success) {
+      res.send(success);
+  },function (faliure) {
+      res.send(faliure)
+  })
+})
+
 module.exports = router

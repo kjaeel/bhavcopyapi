@@ -19,3 +19,14 @@ exports.fetchDailyBhavCopy = function () {
 	})
 	return deferred.promise;
 };
+
+exports.getBhavCopy = function(){
+    var deferred = Q.defer();
+	userService.getBhavCopy().then(function(success){
+		deferred.resolve(success);
+	},function(error){
+		console.error(error);
+		deferred.reject("error occured");
+	})
+    return deferred.promise;
+}

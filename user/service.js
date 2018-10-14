@@ -7,7 +7,7 @@ exports.fetchDailyBhavCopy = function(){
 	var deferred = Q.defer();
 	var request = require('request');
 	var fs = require('fs');
-	var today = new Date();
+	var today = new Date(2018,09,05);
 	var year = today.getFullYear();
 	var date = today.getDate();
 	date = pad(date);
@@ -31,8 +31,10 @@ exports.fetchDailyBhavCopy = function(){
 				.get(url)
 				.on('response', function (res) {
 					if (res.statusCode === 200) {
-						req.pipe(fs.createWriteStream(__dirname+'/zip/fo' + date + month[currentMonth] + year + 'bhav.csv.zip'))
-						next();
+						req.pipe(fs.createWriteStream(__dirname+'\\zip\\fo' + date + month[currentMonth] + year + 'bhav.csv.zip'))
+						req.on('close', function () {
+							 	next();
+						 });
 					}else{
 						console.log("URL not found.")
 						deferred.reject("Invalid URL.");
@@ -52,7 +54,7 @@ exports.fetchDailyBhavCopy = function(){
 				// });
 			}catch(error){
 				console.log(error);
-				deferred.reject("error occured.");
+				deferred.reject("error occured before extract.");
 			}
 			
 		})
@@ -60,11 +62,17 @@ exports.fetchDailyBhavCopy = function(){
 			//csv extract
 			var extract = require('extract-zip')
 			extract(__dirname+'/zip/fo' + date + month[currentMonth] + year + 'bhav.csv.zip', {dir: __dirname+'/extract/'}, function (err) {
-				// extraction is complete. make sure to handle the err
+			//var source = __dirname+"\\zip\\fo05OCT2018bhav.csv.zip"
+			//var target = __dirname+"\\extract\\"
+			//extract(source, {dir: target}, function (err) {
+					// extraction is complete. make sure to handle the err
 				if(err){
 					console.log(err);
-					deferred.reject("error occured.");
+					console.log("source ============= ",source);
+					console.log("target ============= ",target);
+					deferred.reject("error occured while extract.");
 				}else{
+					//console.log("_dirname============= ",__dirname);
 					next();
 				}
 			});
@@ -163,3 +171,15 @@ exports.fetchDailyBhavCopy = function(){
 function pad(n) {
     return (n < 10) ? ("0" + n) : n;
 }
+
+exports.getBhavCopy = function(){
+    var deferred = Q.defer();
+	userModel.getBhavCopy().then(function(success){
+		deferred.resolve(success);
+	},function(error){
+		console.error(error);
+		deferred.reject("error occured");
+	})
+    return deferred.promise;
+}
+
