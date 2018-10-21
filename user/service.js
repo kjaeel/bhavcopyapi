@@ -7,7 +7,7 @@ exports.fetchDailyBhavCopy = function(){
 	var deferred = Q.defer();
 	var request = require('request');
 	var fs = require('fs');
-	var today = new Date(2018,09,05);
+	var today = new Date(2018,09,19);
 	var year = today.getFullYear();
 	var date = today.getDate();
 	date = pad(date);
@@ -25,14 +25,21 @@ exports.fetchDailyBhavCopy = function(){
 		.then(function (next) {
 			//zip download code
 			try{
-				var url ='https://www.nseindia.com/content/historical/DERIVATIVES/'+ year + '/' + month[currentMonth] + '/fo' + date + month[currentMonth] + year + 'bhav.csv.zip'
+				var url ='http://www.nseindia.com/content/historical/DERIVATIVES/'+ year + '/' + month[currentMonth] + '/fo' + date + month[currentMonth] + year + 'bhav.csv.zip'
 				console.log(url);
 				const req = request
 				.get(url)
 				.on('response', function (res) {
 					if (res.statusCode === 200) {
-						req.pipe(fs.createWriteStream(__dirname+'\\zip\\fo' + date + month[currentMonth] + year + 'bhav.csv.zip'))
-						req.on('close', function () {
+						console.log("here");
+						var file =fs.createWriteStream(__dirname+'\\zip\\fo' + date + month[currentMonth] + year + 'bhav.csv.zip');
+						req.pipe(file)
+						file.on('finish', function () {
+							console.log("downlod done.. now saving!");
+							 //	next();
+					 	});
+						file.on('close', function () {
+								console.log("File save done");
 							 	next();
 						 });
 					}else{
@@ -40,18 +47,6 @@ exports.fetchDailyBhavCopy = function(){
 						deferred.reject("Invalid URL.");
 					}
 				})
-				// request(url, function (error, response, body) {
-				// 	console.log('error:', error); // Print the error if one occurred
-				// 	console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
-				// 	console.log('body:', body); // Print the HTML for the Google homepage.
-				// 	if(response.statusCode === 404){
-				// 		deferred.reject("error occured.");
-				// 	}
-				//   })
-				// .pipe(fs.createWriteStream(__dirname+'/zip/fo' + date + month[currentMonth] + year + 'bhav.csv.zip'))
-				// .on('close', function () {
-				// 	next();
-				// });
 			}catch(error){
 				console.log(error);
 				deferred.reject("error occured before extract.");
@@ -62,14 +57,8 @@ exports.fetchDailyBhavCopy = function(){
 			//csv extract
 			var extract = require('extract-zip')
 			extract(__dirname+'/zip/fo' + date + month[currentMonth] + year + 'bhav.csv.zip', {dir: __dirname+'/extract/'}, function (err) {
-			//var source = __dirname+"\\zip\\fo05OCT2018bhav.csv.zip"
-			//var target = __dirname+"\\extract\\"
-			//extract(source, {dir: target}, function (err) {
-					// extraction is complete. make sure to handle the err
 				if(err){
 					console.log(err);
-					console.log("source ============= ",source);
-					console.log("target ============= ",target);
 					deferred.reject("error occured while extract.");
 				}else{
 					//console.log("_dirname============= ",__dirname);
@@ -85,6 +74,7 @@ exports.fetchDailyBhavCopy = function(){
 				csv()
 				.fromFile(csvFilePath)
 				.then((jsonObj)=>{
+					var monthToDb = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 					for (let index = 0; index < jsonObj.length; index++) {
 						var STRIKE_PR = parseInt(jsonObj[index].STRIKE_PR);
 						var CONTRACTS = parseInt(jsonObj[index].CONTRACTS);
@@ -96,10 +86,32 @@ exports.fetchDailyBhavCopy = function(){
 						var SETTLE_PR = parseFloat(jsonObj[index].SETTLE_PR);
 						var OPEN_INT = parseFloat(jsonObj[index].OPEN_INT);
 						var CHG_IN_OI = parseFloat(jsonObj[index].CHG_IN_OI);
-
+						var EXPIRY_DT = jsonObj[index].EXPIRY_DT;
+						EXPIRY_DT = EXPIRY_DT.split('-');
+						var insertExpireMonth = null;
+						for (let i = 0; i < monthToDb.length; i++) {
+							if(EXPIRY_DT[1].trim() === monthToDb[i]){
+								insertExpireMonth = i;
+							}
+							
+						}
+						//var insertExpireYear = convertToYYYY(EXPIRY_DT[2])
+						var insertExpireDate = EXPIRY_DT[2]+'-'+insertExpireMonth+'-'+EXPIRY_DT[0];
+						
+						var TIMESTAMP = jsonObj[index].EXPIRY_DT;
+						TIMESTAMP = TIMESTAMP.split('-');
+						var insertTimestampMonth = null;
+						for (let i = 0; i < monthToDb.length; i++) {
+							if(TIMESTAMP[1].trim() === monthToDb[i]){
+								insertTimestampMonth = i;
+							}
+							
+						}
+						//var insertTimestampYear = convertToYYYY(TIMESTAMP[2])
+						var insertTimestampDate = TIMESTAMP[2]+'-'+insertTimestampMonth+'-'+TIMESTAMP[0];
 						bulkArr.push([jsonObj[index].INSTRUMENT,
 							jsonObj[index].SYMBOL,
-							jsonObj[index].EXPIRY_DT,
+							new Date(insertExpireDate),
 							STRIKE_PR,
 							jsonObj[index].OPTION_TYP,
 							OPEN,
@@ -111,7 +123,7 @@ exports.fetchDailyBhavCopy = function(){
 							VAL_INLAKH,
 							OPEN_INT,
 							CHG_IN_OI,
-							jsonObj[index].TIMESTAMP]);
+							new Date(insertTimestampDate)]);
 						
 					}
 					next(bulkArr);
@@ -183,3 +195,7 @@ exports.getBhavCopy = function(){
     return deferred.promise;
 }
 
+function convertToYYYY(yy) {
+	var yyyy  = (yy < 90) ? '20' + yy : '19' + yy;
+	return yyyy;
+}
