@@ -7,7 +7,7 @@ exports.fetchDailyBhavCopy = function(){
 	var deferred = Q.defer();
 	var request = require('request');
 	var fs = require('fs');
-	var today = new Date(2018,09,19);
+	var today = new Date(2018,09,26);
 	var year = today.getFullYear();
 	var date = today.getDate();
 	date = pad(date);
@@ -61,7 +61,6 @@ exports.fetchDailyBhavCopy = function(){
 					console.log(err);
 					deferred.reject("error occured while extract.");
 				}else{
-					//console.log("_dirname============= ",__dirname);
 					next();
 				}
 			});
@@ -198,4 +197,116 @@ exports.getBhavCopy = function(){
 function convertToYYYY(yy) {
 	var yyyy  = (yy < 90) ? '20' + yy : '19' + yy;
 	return yyyy;
+}
+
+exports.populateContractTables = function(){
+    var deferred = Q.defer();
+	(function (exports) {
+		'use strict';
+	   
+		var Sequence = exports.Sequence || require('sequence').Sequence
+		  , sequence = Sequence.create()
+		  , err
+		  ;
+	   
+		sequence
+		  .then(function (next) {
+			//validate if data exist and get bhav copy data
+				userModel.getBhavCopy().then(function(success){
+					if(success && success.length){
+						next();
+					}else{
+						console.log("Database empty")
+						deferred.reject("Database empty")
+					}
+				},function(error){
+					console.error(error);
+					deferred.reject("error occured");
+				})		
+		  })
+		  .then(function (next) {
+				userModel.getContractCopy().then(function(success){
+					console.log("fetching done!");
+					next(success);
+				},function(error){
+					console.error(error);
+					deferred.reject("error occured while fetching");
+				});	
+		  })
+		  .then(function (next,success) {
+				var bulkArr = [];
+				var monthToDb = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+				try{
+					for (let i = 0; i < success.length; i++) {
+						var contract = success[i];
+						var bulkContractArray = [];
+						for (let j = 0; j < contract.length; j++) {
+							var insertExpireMonth = null;
+							if(contract[j].edate){
+								var EDATE = contract[j].edate;
+								EDATE = EDATE.split('-');
+								for (let k = 0; k < monthToDb.length; k++) {
+									if(EDATE[1].trim() === monthToDb[k]){
+										insertExpireMonth = k;
+									}
+								}
+								var insertExpireDate = EDATE[2]+'-'+insertExpireMonth+'-'+EDATE[0];
+								bulkContractArray.push([
+									contract[j].symbol,
+									new Date(insertExpireDate),
+									contract[j].id]);
+							}
+						}
+						bulkArr.push(bulkContractArray);
+					}
+				}catch(e){	
+					console.log(e);
+					deferred.reject(e);
+				}
+				
+				userModel.InsertBulkContractCopy(bulkArr).then(function(result){
+					deferred.resolve(result);
+				},function(error){
+					console.error(error);
+					deferred.reject("error occured while inserting");
+				});	
+	 	 });
+	   
+	  // so that this example works in browser and node.js
+	}('undefined' !== typeof exports && exports || new Function('return this')()));
+	  
+	return deferred.promise;
+}
+
+exports.getContracts = function(){
+	var deferred = Q.defer();
+	userModel.getContracts().then(function(success){
+		deferred.resolve(success);
+	},function(error){
+		console.error(error);
+		deferred.reject("error occured");
+	})
+    return deferred.promise;
+}
+
+exports.getChart = function(reqObject){
+	var deferred = Q.defer();
+	//form dynamic quary
+	var query = "select *   FROM bhavcopycore as BCC,";
+	if(reqObject.contractType === 'CE'){
+		query = query + "bhavcall BC WHERE BC.id = BCC.id AND BCC.option_typ = ? AND BC.symbol = ? AND BC.id = ?"
+	}else if(reqObject.contractType === 'PE'){
+		query = query + "bhavput BP WHERE BP.id = BCC.id AND BCC.option_typ = ? AND BP.symbol = ? AND BP.id = ?"
+	}else{
+		query = query + "bhavfuture BF WHERE BF.id = BCC.id AND BCC.option_typ = ? AND BF.symbol = ? AND BF.id = ?"
+	}
+	var values = [];
+	values.push(reqObject.contractType); values.push(reqObject.symbol); values.push(reqObject.id);
+	userModel.getChart(query,values).then(function(success){
+		deferred.resolve(success);
+	},function(error){
+		console.error(error);
+		deferred.reject("error occured");
+	})
+    return deferred.promise;
 }

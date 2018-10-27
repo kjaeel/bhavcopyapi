@@ -29,4 +29,28 @@ router.get('/getBhavCopy', function (req, res) {
   })
 })
 
+router.get('/populateContractTables', function (req, res) {
+  userController.populateContractTables().then(function (success) {
+      res.send(success);
+  },function (faliure) {
+      res.send(faliure)
+  })
+})
+
+router.get('/getContracts', function (req, res) {
+  userController.getContracts().then(function (success) {
+      res.send(success);
+  },function (faliure) {
+      res.send(faliure)
+  })
+})
+
+router.post('/getChart', function (req, res) {
+  var reqObject = req.body;
+  userController.getChart(reqObject).then(function (success) {
+      res.send(success);
+  },function (faliure) {
+      res.send(faliure)
+  })
+})
 module.exports = router
