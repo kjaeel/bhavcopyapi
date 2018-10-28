@@ -20,7 +20,10 @@ const config = {
           user : 'root',
           password : '',
           database : 'bhavcopy'
-    }
+    },
+    average1 : 5,
+    average3 :15,
+    stochastic :8
   },
   test: { },
   development: {

@@ -2,12 +2,13 @@ var Q = require('q');
 var userModel = require('./model')
 var fs = require('fs');
 var request = require('request');
+var  config = require('../config')
 
 exports.fetchDailyBhavCopy = function(){
 	var deferred = Q.defer();
 	var request = require('request');
 	var fs = require('fs');
-	var today = new Date(2018,09,26);
+	var today = new Date(2018,09,25);
 	var year = today.getFullYear();
 	var date = today.getDate();
 	date = pad(date);
@@ -292,17 +293,114 @@ exports.getContracts = function(){
 exports.getChart = function(reqObject){
 	var deferred = Q.defer();
 	//form dynamic quary
-	var query = "select *   FROM bhavcopycore as BCC,";
-	if(reqObject.contractType === 'CE'){
-		query = query + "bhavcall BC WHERE BC.id = BCC.id AND BCC.option_typ = ? AND BC.symbol = ? AND BC.id = ?"
-	}else if(reqObject.contractType === 'PE'){
-		query = query + "bhavput BP WHERE BP.id = BCC.id AND BCC.option_typ = ? AND BP.symbol = ? AND BP.id = ?"
-	}else{
-		query = query + "bhavfuture BF WHERE BF.id = BCC.id AND BCC.option_typ = ? AND BF.symbol = ? AND BF.id = ?"
-	}
+	// var query = "select *   FROM bhavcopycore as BCC,";
+	// if(reqObject.contractType === 'CE'){
+	// 	query = query + "bhavcall BC WHERE BCC.option_typ = ? AND BC.symbol = ?"
+	// }else if(reqObject.contractType === 'PE'){
+	// 	query = query + "bhavput BP WHERE BCC.option_typ = ? AND BP.symbol = ?"
+	// }else{
+	// 	query = query + "bhavfuture BF WHERE BCC.option_typ = ? AND BF.symbol = ?"
+	// }
+	var query = 'select *  FROM bhavcopycore WHERE symbol = ? and expiry_dt = ? and strike_pr = ? and option_typ = ?'
 	var values = [];
-	values.push(reqObject.contractType); values.push(reqObject.symbol); values.push(reqObject.id);
+	var contractSymbol = reqObject.symbol.split('-');
+	//select *  FROM bhavcopycore WHERE symbol = "BANKNIFTY" and expiry_dt = date and strike_pr = 22900 and option_typ = "PE"
+	//BANKNIFTY-01-Oct-2018-22800-CE
+	var bhavSymbol = contractSymbol[0];
+	var day = contractSymbol[1];
+	var month = contractSymbol[2];
+	var monthToDb = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+	for (let k = 0; k < monthToDb.length; k++) {
+		if(month === monthToDb[k]){
+			month = k;
+		}
+	}
+	var year = contractSymbol[3];
+	var date = new Date(year,month,day);
+	var strike_pr = contractSymbol[4];
+	var option_typ = contractSymbol[5];
+	values.push(bhavSymbol); values.push(date); values.push(strike_pr); values.push(option_typ);
 	userModel.getChart(query,values).then(function(success){
+		var high = [];
+		var low = [];
+		var sum = 0;
+		for (let i = 0; i < success.length; i++) {
+			high.push(success[i].high);
+			low.push(success[i].low);
+			sum =sum + success[i].close;
+		}
+		var average1 = sum/success.length;
+		console.log("Max :",Math.max(...high));
+		console.log("Min :",Math.min(...low));
+		for (let i = 0; i < success.length; i++) {
+			success[i]['average1'] = average1;
+			success[i]['average3'] = config.average3; // change this
+			success[i]['stochastic'] = config.stochastic;
+			//fall = close - pr-close	
+			var fall = success[0].close - success[0].close; // change this
+			success[i]['fall'] = fall; 
+			success[i]['macd'] = config.average1 - config.average3; 
+			success[i]['volume'] = 1	//figure out
+			success[i]['pr_close'] = success[0].close;// yester day's close fix this
+			success[i]['high-52'] = Math.max(...high); 
+			success[i]['low-52'] = Math.min(...low); 	
+		}
+		deferred.resolve(success);
+	},function(error){
+		console.error(error);
+		deferred.reject("error occured");
+	})
+    return deferred.promise;
+}
+
+exports.savePortfolio = function(reqObject){
+	var deferred = Q.defer();
+	var query = "INSERT INTO portfolio (symbol, edate, user_id) VALUES (?,?,?)"
+	userModel.savePortfolio(query,reqObject).then(function(success){
+		deferred.resolve(success);
+	},function(error){
+		console.error(error);
+		deferred.reject("error occured");
+	})
+    return deferred.promise;
+}
+
+exports.getPortfolio = function(user_id){
+	var deferred = Q.defer();
+	userModel.getPortfolio(user_id).then(function(success){
+		deferred.resolve(success);
+	},function(error){
+		console.error(error);
+		deferred.reject("error occured");
+	})
+    return deferred.promise;
+}
+
+exports.updatePortfolio = function(reqObject){
+	var deferred = Q.defer();
+	var values = [];
+	var query = "UPDATE portfolio set target = ? ";
+	values.push(reqObject.target);
+	if(reqObject.pdate){
+		query = query + ",pdate = ?";
+		values.push(new Date(reqObject.pdate));
+	}
+	if(reqObject.qty){
+		query = query + ",qty = ?";
+		values.push(reqObject.qty);
+	}
+	if(reqObject.prate){
+		query = query + ",prate = ?";
+		values.push(reqObject.prate);
+	}
+	if(reqObject.owner){
+		query = query + ",owner = ?";
+		values.push(reqObject.owner);
+	}
+	query = query + " where user_id = ? and  symbol = ?"
+	values.push(reqObject.user_id);
+	values.push(reqObject.symbol);
+	userModel.updatePortfolio(query,values).then(function(success){
 		deferred.resolve(success);
 	},function(error){
 		console.error(error);

@@ -53,4 +53,33 @@ router.post('/getChart', function (req, res) {
       res.send(faliure)
   })
 })
+
+router.post('/savePortfolio', function (req, res) {
+    var reqObject = req.body;
+    userController.savePortfolio(reqObject).then(function (success) {
+        res.send(success);
+    },function (faliure) {
+        res.send(faliure)
+    })
+});
+
+router.get('/getPortfolio', function (req, res) {
+    var user_id = req.query.user_id;
+    userController.getPortfolio(user_id).then(function (success) {
+        res.send(success);
+    },function (faliure) {
+        res.send(faliure)
+    })
+});
+
+router.post('/updatePortfolio', function (req, res) {
+    var reqObject = req.body;
+    userController.updatePortfolio(reqObject).then(function (success) {
+        res.send(success);
+    },function (faliure) {
+        res.send(faliure)
+    })
+});
+
+
 module.exports = router

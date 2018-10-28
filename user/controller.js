@@ -106,3 +106,109 @@ exports.getChart = function (reqObject) {
 	})
 	return deferred.promise;
 };
+
+exports.savePortfolio = function (reqObject) {
+	var deferred = Q.defer();
+	if(!reqObject.symbol){
+		var response = {
+			status :403,
+			message:'Param "symbol" missing or invlaid'
+		}
+		deferred.reject(response);
+	}
+	if(!reqObject.edate){
+		var response = {
+			status :403,
+			message:'Param "edate" missing or invlaid'
+		}
+		deferred.reject(response);
+	}
+	if(!reqObject.user_id){
+		var response = {
+			status :403,
+			message:'Param "user_id" missing or invlaid'
+		}
+		deferred.reject(response);
+	}
+	userService.savePortfolio(reqObject).then(function (success) {
+		var response = {
+			status :200,
+			message:success
+		}
+		deferred.resolve(response)
+	},function (faliure) {
+		var response = {
+			status :401,
+			message:faliure
+		}
+		deferred.reject(response)
+	})
+	return deferred.promise;
+};
+
+exports.getPortfolio = function (user_id) {
+	var deferred = Q.defer();
+	//validations!!!!
+	if(!user_id){
+		var response = {
+			status :403,
+			message:'Param "user_id" missing or invlaid'
+		}
+		deferred.reject(response);
+	}
+
+	userService.getPortfolio(user_id).then(function (success) {
+		var response = {
+			status :200,
+			message:success
+		}
+		deferred.resolve(response)
+	},function (faliure) {
+		var response = {
+			status :401,
+			message:faliure
+		}
+		deferred.reject(response)
+	})
+	return deferred.promise;
+};
+
+exports.updatePortfolio = function (reqObject) {
+	var deferred = Q.defer();
+	//validations!!!!
+	if(!reqObject.symbol){
+		var response = {
+			status :403,
+			message:'Param "symbol" missing or invlaid'
+		}
+		deferred.reject(response);
+	}
+	if(!reqObject.user_id){
+		var response = {
+			status :403,
+			message:'Param "user_id" missing or invlaid'
+		}
+		deferred.reject(response);
+	}
+	if(!reqObject.target){
+		var response = {
+			status :403,
+			message:'Param "target" missing or invlaid'
+		}
+		deferred.reject(response);
+	}
+	userService.updatePortfolio(reqObject).then(function (success) {
+		var response = {
+			status :200,
+			message:success
+		}
+		deferred.resolve(response)
+	},function (faliure) {
+		var response = {
+			status :401,
+			message:faliure
+		}
+		deferred.reject(response)
+	})
+	return deferred.promise;
+};
