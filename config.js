@@ -36,8 +36,8 @@ const config = {
       host : 'localhost',
       userName : 'root',
       password : 'root',
-      databaseName : 'bhavcopy'
-
+      databaseName : 'bhavcopy',
+      multipleStatements : true
     }
   },
   production: {

@@ -256,6 +256,70 @@ exports.getChart = function(sql,values){
     return deferred.promise;
 }
 
+exports.getVolumeAndPrClose = function(values){
+    var deferred = Q.defer();
+    var connection = mysql.createConnection(config.mysql);
+    console.log("inside getVolumeAndPrClose");
+    connection.connect(function(err) {
+        if (err) throw err;
+        console.log("Connected!");
+       // var prClose = "select DISTINCT `timestamp`, close,symbol,`expiry_dt` from bhavcopycore where `symbol` = ? and `expiry_dt` = date(?) AND `strike_pr` = ? and `option_typ` = ?  AND date(`timestamp`) = (select max(date(`timestamp`)) from bhavcopycore where date(`timestamp`) < date(now()) );"
+        var sql  = "SELECT COUNT(symbol) as volume FROM `bhavcall` WHERE 1;"//SELECT COUNT(symbol) FROM `bhavfuture` WHERE 1;SELECT COUNT(symbol) FROM `bhavput` WHERE 1;"+prClose;
+        connection.query(sql,values, function (err, result) {
+            if (err){
+                console.log(err);
+            }else{
+                var sqlFuture  = "SELECT COUNT(symbol) as volume FROM `bhavfuture` WHERE 1";
+                connection.query(sqlFuture,values, function (err, future) {
+                    if (err){
+                        console.log(err);
+                    }else{
+                        var sqlPut  = "SELECT COUNT(symbol) as volume FROM `bhavput` WHERE 1;";
+                        connection.query(sqlPut,values, function (err, put) {
+                            if (err){
+                                console.log(err);
+                            }else{
+                                var sqlPrClose = "select DISTINCT `timestamp`, close,symbol,`expiry_dt` from bhavcopycore where `symbol` = ? and `expiry_dt` = date(?) AND `strike_pr` = ? and `option_typ` = ?  AND date(`timestamp`) = (select max(date(`timestamp`)) from bhavcopycore where date(`timestamp`) < date(now()) );"
+                                connection.query(sqlPrClose,values, function (err, prClose) {
+                                    if (err){
+                                        console.log(err);
+                                        connection.end(function(err) {
+                                                    // The connection is terminated now
+                                                    console.log("Connection is terminated now.");
+                                                    deferred.reject("error occured");
+                                        }); 
+                                    }else{
+                                        var volume = future[0].volume + put[0].volume + result[0].volume
+                                        var pr_close = pr_close;
+                                        if(prClose && prClose.length){
+                                            pr_close = prClose[0].close;
+                                        }else{
+                                            pr_close = 0;
+                                        }
+                                        var resObj = {
+                                            volume : volume,
+                                            prClose : pr_close
+                                        }
+                                        connection.end(function(err) {
+                                                    // The connection is terminated now
+                                                    console.log("Connection is terminated now.");
+                                                    deferred.resolve(resObj);
+                                                    //next();
+                                        }); 
+                                    }
+                                });
+                               // next(future,put);
+                            }
+                        });
+                        //next(future)
+                    }
+                });
+            }
+        });
+    });
+    return deferred.promise;
+}
+
 exports.savePortfolio = function(query,reqObject){
     var deferred = Q.defer();
     var connection = mysql.createConnection(config.mysql);

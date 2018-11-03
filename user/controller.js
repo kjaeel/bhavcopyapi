@@ -2,9 +2,9 @@ var userService = require('./service')
 var Q = require('q');
 var  util = require('../util.js')
 
-exports.fetchDailyBhavCopy = function () {
+exports.fetchDailyBhavCopy = function (day) {
 	var deferred = Q.defer();
-	userService.fetchDailyBhavCopy().then(function (success) {
+	userService.fetchDailyBhavCopy(day).then(function (success) {
 		var response = {
 			status :200,
 			message:success

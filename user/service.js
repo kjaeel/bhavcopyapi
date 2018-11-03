@@ -4,11 +4,11 @@ var fs = require('fs');
 var request = require('request');
 var  config = require('../config')
 
-exports.fetchDailyBhavCopy = function(){
+exports.fetchDailyBhavCopy = function(day){
 	var deferred = Q.defer();
 	var request = require('request');
 	var fs = require('fs');
-	var today = new Date(2018,09,25);
+	var today = new Date(2018,09,day);
 	var year = today.getFullYear();
 	var date = today.getDate();
 	date = pad(date);
@@ -329,23 +329,29 @@ exports.getChart = function(reqObject){
 			low.push(success[i].low);
 			sum =sum + success[i].close;
 		}
-		var average1 = sum/success.length;
+		var average = sum/success.length;
 		console.log("Max :",Math.max(...high));
 		console.log("Min :",Math.min(...low));
-		for (let i = 0; i < success.length; i++) {
-			success[i]['average1'] = average1;
-			success[i]['average3'] = config.average3; // change this
-			success[i]['stochastic'] = config.stochastic;
-			//fall = close - pr-close	
-			var fall = success[0].close - success[0].close; // change this
-			success[i]['fall'] = fall; 
-			success[i]['macd'] = config.average1 - config.average3; 
-			success[i]['volume'] = 1	//figure out
-			success[i]['pr_close'] = success[0].close;// yester day's close fix this
-			success[i]['high-52'] = Math.max(...high); 
-			success[i]['low-52'] = Math.min(...low); 	
-		}
-		deferred.resolve(success);
+		userModel.getVolumeAndPrClose(values).then(function(data){
+			console.log(data);
+			for (let i = 0; i < success.length; i++) {
+				success[i]['average1'] = config.average1;
+				success[i]['average3'] = 34; // change this
+				success[i]['stochastic'] = config.stochastic;
+				success[i]['fall'] = fall; 
+				success[i]['macd'] = config.average1 - config.average3; 
+				success[i]['volume'] = data.volume	//figure out
+				success[i]['pr_close'] = data.prClose;// yester day's close fix this
+				//fall = close - pr-close	
+				var fall = success[i].close - data.prClose; // change this
+				success[i]['high-52'] = Math.max(...high); 
+				success[i]['low-52'] = Math.min(...low); 	
+			}
+			deferred.resolve(success);
+		},function(err){
+			console.error(error);
+			deferred.reject("error occured");
+		})
 	},function(error){
 		console.error(error);
 		deferred.reject("error occured");
@@ -407,4 +413,10 @@ exports.updatePortfolio = function(reqObject){
 		deferred.reject("error occured");
 	})
     return deferred.promise;
+}
+
+function yesterday() {
+	var d = new Date();
+	let yesterday = d.setDate(d.getDate() - 1);
+	return yesterday;
 }

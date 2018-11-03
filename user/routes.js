@@ -13,7 +13,7 @@ router.get('/', function (req, res) {
 })
 
 router.get('/fetchDailyBhavCopy', function (req, res) {
-  userController.fetchDailyBhavCopy().then(function (success) {
+  userController.fetchDailyBhavCopy(req.query.day).then(function (success) {
       console.log("All Done.");
       res.send(success);
   },function (faliure) {
