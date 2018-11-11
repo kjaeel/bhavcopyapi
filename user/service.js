@@ -8,7 +8,7 @@ exports.fetchDailyBhavCopy = function(day){
 	var deferred = Q.defer();
 	var request = require('request');
 	var fs = require('fs');
-	var today = new Date(2018,09,day);
+	var today = new Date(2018,10,day);
 	var year = today.getFullYear();
 	var date = today.getDate();
 	date = pad(date);
@@ -90,25 +90,24 @@ exports.fetchDailyBhavCopy = function(day){
 						EXPIRY_DT = EXPIRY_DT.split('-');
 						var insertExpireMonth = null;
 						for (let i = 0; i < monthToDb.length; i++) {
-							if(EXPIRY_DT[1].trim() === monthToDb[i]){
+							if(EXPIRY_DT[1].toUpperCase().trim() === monthToDb[i].toUpperCase()){
 								insertExpireMonth = i;
 							}
 							
 						}
 						//var insertExpireYear = convertToYYYY(EXPIRY_DT[2])
-						var insertExpireDate = EXPIRY_DT[2]+'-'+insertExpireMonth+'-'+EXPIRY_DT[0];
-						
-						var TIMESTAMP = jsonObj[index].EXPIRY_DT;
+						var insertExpireDate = new Date(EXPIRY_DT[2],insertExpireMonth,EXPIRY_DT[0]);
+						var TIMESTAMP = jsonObj[index].TIMESTAMP;
 						TIMESTAMP = TIMESTAMP.split('-');
 						var insertTimestampMonth = null;
-						for (let i = 0; i < monthToDb.length; i++) {
-							if(TIMESTAMP[1].trim() === monthToDb[i]){
-								insertTimestampMonth = i;
+						for (let a = 0; a < monthToDb.length; a++) {
+							if(TIMESTAMP[1].toUpperCase().trim() === monthToDb[a].toUpperCase()){
+								insertTimestampMonth = a;
 							}
 							
 						}
 						//var insertTimestampYear = convertToYYYY(TIMESTAMP[2])
-						var insertTimestampDate = TIMESTAMP[2]+'-'+insertTimestampMonth+'-'+TIMESTAMP[0];
+						var insertTimestampDate = new Date(TIMESTAMP[2],insertTimestampMonth,TIMESTAMP[0]);
 						bulkArr.push([jsonObj[index].INSTRUMENT,
 							jsonObj[index].SYMBOL,
 							new Date(insertExpireDate),
@@ -247,11 +246,11 @@ exports.populateContractTables = function(){
 								var EDATE = contract[j].edate;
 								EDATE = EDATE.split('-');
 								for (let k = 0; k < monthToDb.length; k++) {
-									if(EDATE[1].trim() === monthToDb[k]){
+									if(EDATE[1].toUpperCase().trim() === monthToDb[k].toUpperCase()){
 										insertExpireMonth = k;
 									}
 								}
-								var insertExpireDate = EDATE[2]+'-'+insertExpireMonth+'-'+EDATE[0];
+								var insertExpireDate = new Date( EDATE[2],insertExpireMonth,EDATE[0]);
 								bulkContractArray.push([
 									contract[j].symbol,
 									new Date(insertExpireDate),
@@ -320,42 +319,68 @@ exports.getChart = function(reqObject){
 	var strike_pr = contractSymbol[4];
 	var option_typ = contractSymbol[5];
 	values.push(bhavSymbol); values.push(date); values.push(strike_pr); values.push(option_typ);
-	userModel.getChart(query,values).then(function(success){
-		var high = [];
-		var low = [];
-		var sum = 0;
-		for (let i = 0; i < success.length; i++) {
-			high.push(success[i].high);
-			low.push(success[i].low);
-			sum =sum + success[i].close;
-		}
-		var average = sum/success.length;
-		console.log("Max :",Math.max(...high));
-		console.log("Min :",Math.min(...low));
-		userModel.getVolumeAndPrClose(values).then(function(data){
-			console.log(data);
+	(function (exports) {
+		'use strict';
+	   
+		var Sequence = exports.Sequence || require('sequence').Sequence
+		  , sequence = Sequence.create()
+		  , err
+		  ;
+	   
+		sequence
+		  .then(function (next) {
+			userModel.getChart(query,values).then(function(success){
+				
+				next(success);
+			},function(error){
+				console.error(error);
+				deferred.reject("error occured");
+			})
+		  })
+		  .then(function (next, success) {
+			userModel.getVolumeAndPrClose(values).then(function(data){
+				next(success,data); 
+			},function(err){
+				console.error(error);
+				deferred.reject("error occured");
+			})
+		  })
+		  .then(function (next, success, data) {
+				userModel.getAvg(values).then(function(avg){
+					next(success,data,avg);
+				},function(error){
+					console.error(error);
+					deferred.reject("error occured");
+				});
+		  })
+		  .then(function (next, success, data, avg) {
+			//final data
+			console.log("Final data formation")
+			var high = [];
+			var low = [];
+			var sum = 0;
 			for (let i = 0; i < success.length; i++) {
-				success[i]['average1'] = config.average1;
-				success[i]['average3'] = 34; // change this
-				success[i]['stochastic'] = config.stochastic;
-				success[i]['fall'] = fall; 
-				success[i]['macd'] = config.average1 - config.average3; 
-				success[i]['volume'] = data.volume	//figure out
+				high.push(success[i].high);
+				low.push(success[i].low);
+				sum =sum + success[i].close;
 				success[i]['pr_close'] = data.prClose;// yester day's close fix this
 				//fall = close - pr-close	
 				var fall = success[i].close - data.prClose; // change this
-				success[i]['high-52'] = Math.max(...high); 
-				success[i]['low-52'] = Math.min(...low); 	
+				success[i]['fall'] = fall; 
+				
 			}
+			console.log("Max :",Math.max(...high));
+			console.log("Min :",Math.min(...low));
+			success.push({'average1' : avg.avg1});
+			success.push({'average3' : avg.avg3}); // change this
+			success.push({'macd' : avg.avg1 - avg.avg3}); 
+			success.push({'high-52' : Math.max(...high)}); 
+			success.push({'low-52' : Math.min(...low)});
 			deferred.resolve(success);
-		},function(err){
-			console.error(error);
-			deferred.reject("error occured");
-		})
-	},function(error){
-		console.error(error);
-		deferred.reject("error occured");
-	})
+		  });
+	   
+	  // so that this example works in browser and node.js
+	  }('undefined' !== typeof exports && exports || new Function('return this')()));
     return deferred.promise;
 }
 

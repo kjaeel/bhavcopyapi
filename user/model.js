@@ -417,3 +417,58 @@ exports.updatePortfolio = function(query,values){
     });
     return deferred.promise;
 }
+
+exports.getAvg = function(values){
+    var deferred = Q.defer();
+    var connection = mysql.createConnection(config.mysql);
+    console.log("inside getAvg");
+    connection.connect(function(err) {
+        if (err) throw err;
+        console.log("Connected!");
+       // var prClose = "select DISTINCT `timestamp`, close,symbol,`expiry_dt` from bhavcopycore where `symbol` = ? and `expiry_dt` = date(?) AND `strike_pr` = ? and `option_typ` = ?  AND date(`timestamp`) = (select max(date(`timestamp`)) from bhavcopycore where date(`timestamp`) < date(now()) );"
+        var sql  = 'SELECT * FROM `bhavcopycore` WHERE symbol = ? and expiry_dt = ? and `strike_pr` = ? and `option_typ` = ? and timestamp < Date(Now())';
+        connection.query(sql,values, function (err, result) {
+            if (err){
+                console.log(err);
+                connection.end(function(err) {
+                    // The connection is terminated now
+                   console.log("Connection is terminated now.");
+                   deferred.reject("error occured");
+                });
+            }else{    
+                if(result && result.lenght){
+                    var avgArr1 = result.slice.slice(-5);
+                    var avgArr3 = result.slice.slice(-15);
+                    var avgSum1 = 0;
+                    var avgSum3 = 0;
+                    if(result.length >= days){
+                        for (let i = 0; i < avgArr1.length; i++) {
+                            avgSum1 =  avgSum1 + avgArr1[i];
+                        }
+                    
+                        for (let i = 0; i < avgArr3.length; i++) {
+                            avgSum1 =  avgSum3 + avgArr3[i];
+                        }
+                    }
+                    var avg1 = avgSum1/5;
+                    var avg3 = avgSum3/15;
+                    connection.end(function(err) {
+                        // The connection is terminated now
+                        console.log("Connection is terminated now.");
+                        deferred.resolve({'avg1' : avg1 , 'avg3' : avg3 });
+                        //next();
+                    });
+                }else{
+                    connection.end(function(err) {
+                        // The connection is terminated now
+                        console.log("Connection is terminated now.");
+                        deferred.resolve({'avg1' : 0 , 'avg3' : 0 });
+                        //next();
+                    });
+                }
+                
+            }
+        });
+    });
+    return deferred.promise;
+}
