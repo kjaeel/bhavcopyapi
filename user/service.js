@@ -291,15 +291,6 @@ exports.getContracts = function(){
 
 exports.getChart = function(reqObject){
 	var deferred = Q.defer();
-	//form dynamic quary
-	// var query = "select *   FROM bhavcopycore as BCC,";
-	// if(reqObject.contractType === 'CE'){
-	// 	query = query + "bhavcall BC WHERE BCC.option_typ = ? AND BC.symbol = ?"
-	// }else if(reqObject.contractType === 'PE'){
-	// 	query = query + "bhavput BP WHERE BCC.option_typ = ? AND BP.symbol = ?"
-	// }else{
-	// 	query = query + "bhavfuture BF WHERE BCC.option_typ = ? AND BF.symbol = ?"
-	// }
 	var query = 'select *  FROM bhavcopycore WHERE symbol = ? and expiry_dt = ? and strike_pr = ? and option_typ = ?'
 	var values = [];
 	var contractSymbol = reqObject.symbol.split('-');
@@ -362,20 +353,18 @@ exports.getChart = function(reqObject){
 			for (let i = 0; i < success.length; i++) {
 				high.push(success[i].high);
 				low.push(success[i].low);
+			}
+			for (let i = 0; i < success.length; i++) {
 				sum =sum + success[i].close;
 				success[i]['pr_close'] = data.prClose;// yester day's close fix this
 				//fall = close - pr-close	
 				var fall = success[i].close - data.prClose; // change this
 				success[i]['fall'] = fall; 
-				
+				success[i]['average1'] = avg.avg1.toFixed(2);
+				success[i]['average3'] = avg.avg3.toFixed(2); // change this
+				success[i]['high-52'] = Math.max(...high); 
+				success[i]['low-52'] = Math.min(...low);	
 			}
-			console.log("Max :",Math.max(...high));
-			console.log("Min :",Math.min(...low));
-			success.push({'average1' : avg.avg1});
-			success.push({'average3' : avg.avg3}); // change this
-			success.push({'macd' : avg.avg1 - avg.avg3}); 
-			success.push({'high-52' : Math.max(...high)}); 
-			success.push({'low-52' : Math.min(...low)});
 			deferred.resolve(success);
 		  });
 	   
@@ -384,6 +373,39 @@ exports.getChart = function(reqObject){
     return deferred.promise;
 }
 
+exports.getMacd = function(reqObject){
+	var deferred = Q.defer();
+	var macd = reqObject.average1 - reqObject.average3;
+	deferred.resolve({"macd" : macd});
+    return deferred.promise;
+}
+
+exports.getStochastic = function(success){
+	var deferred = Q.defer();
+	var high = [];
+	var low = [];
+	var resObj = [];
+	for (let i = 0; i < success.length; i++) {
+		high.push(success[i].high);
+		low.push(success[i].low);
+	}
+	var stochasticCounter = 0;
+	for (let i = 0; i < success.length; i++) {
+		var highestHigh = Math.max(...high); 
+		var lowestLow = Math.min(...low);
+	
+		if((highestHigh - lowestLow) > 0 && success.length >= 6 && stochasticCounter <= 6){
+			var stochastic = ((success[i].close - lowestLow)/(highestHigh - lowestLow)*100)
+			resObj.push({ "stochastic": stochastic.toFixed(2), "timestamp" : success[i].timestamp });
+			stochasticCounter++;
+		}else{
+			resObj.push({ "stochastic": 0, "timestamp" : success[i].timestamp });
+		}
+		
+	}
+	deferred.resolve(resObj);
+    return deferred.promise;
+}
 exports.savePortfolio = function(reqObject){
 	var deferred = Q.defer();
 	var query = "INSERT INTO portfolio (symbol, edate, user_id) VALUES (?,?,?)"

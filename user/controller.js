@@ -212,3 +212,25 @@ exports.updatePortfolio = function (reqObject) {
 	})
 	return deferred.promise;
 };
+
+exports.getMacd = function(reqObject){
+    var deferred = Q.defer();
+	userService.getMacd(reqObject).then(function(success){
+		deferred.resolve(success);
+	},function(error){
+		console.error(error);
+		deferred.reject("error occured");
+	})
+    return deferred.promise;
+}
+
+exports.getStochastic = function(reqObject){
+    var deferred = Q.defer();
+	userService.getStochastic(reqObject).then(function(success){
+		deferred.resolve(success);
+	},function(error){
+		console.error(error);
+		deferred.reject("error occured");
+	})
+    return deferred.promise;
+}

@@ -259,7 +259,6 @@ exports.getChart = function(sql,values){
 exports.getVolumeAndPrClose = function(values){
     var deferred = Q.defer();
     var connection = mysql.createConnection(config.mysql);
-    console.log("inside getVolumeAndPrClose");
     connection.connect(function(err) {
         if (err) throw err;
         console.log("Connected!");
@@ -421,13 +420,13 @@ exports.updatePortfolio = function(query,values){
 exports.getAvg = function(values){
     var deferred = Q.defer();
     var connection = mysql.createConnection(config.mysql);
-    console.log("inside getAvg");
     connection.connect(function(err) {
         if (err) throw err;
         console.log("Connected!");
        // var prClose = "select DISTINCT `timestamp`, close,symbol,`expiry_dt` from bhavcopycore where `symbol` = ? and `expiry_dt` = date(?) AND `strike_pr` = ? and `option_typ` = ?  AND date(`timestamp`) = (select max(date(`timestamp`)) from bhavcopycore where date(`timestamp`) < date(now()) );"
-        var sql  = 'SELECT * FROM `bhavcopycore` WHERE symbol = ? and expiry_dt = ? and `strike_pr` = ? and `option_typ` = ? and timestamp < Date(Now())';
-        connection.query(sql,values, function (err, result) {
+        var sql  = 'SELECT close FROM `bhavcopycore` WHERE symbol = ? and expiry_dt = ? and `strike_pr` = ? and `option_typ` = ? and timestamp < Date(Now())';
+        
+        connection.query(sql,[values[0],new Date(values[1]),Number(values[2]),values[3]], function (err, result) {
             if (err){
                 console.log(err);
                 connection.end(function(err) {
@@ -436,18 +435,25 @@ exports.getAvg = function(values){
                    deferred.reject("error occured");
                 });
             }else{    
-                if(result && result.lenght){
-                    var avgArr1 = result.slice.slice(-5);
-                    var avgArr3 = result.slice.slice(-15);
-                    var avgSum1 = 0;
-                    var avgSum3 = 0;
-                    if(result.length >= days){
+                var avgArr1 = []
+                var avgArr3 = []
+                var avgSum1 = 0;
+                var avgSum3 = 0;
+                if(result && result.length){
+                    for (let i = 0; i < result.length; i++) {
+                        avgArr1.push(result[i].close)// result.slice(-5);
+                        avgArr3.push(result[i].close)
+                    }
+                    avgArr1 = avgArr1.slice(-5);
+                    avgArr3 = avgArr3.slice(-15);
+                    if(avgArr1.length >= 5){
                         for (let i = 0; i < avgArr1.length; i++) {
                             avgSum1 =  avgSum1 + avgArr1[i];
                         }
-                    
+                    }
+                    if(avgArr3.length >=15){
                         for (let i = 0; i < avgArr3.length; i++) {
-                            avgSum1 =  avgSum3 + avgArr3[i];
+                            avgSum3 =  avgSum3 + avgArr3[i];
                         }
                     }
                     var avg1 = avgSum1/5;

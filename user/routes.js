@@ -81,5 +81,21 @@ router.post('/updatePortfolio', function (req, res) {
     })
 });
 
+router.post('/getMacd', function (req, res) {
+    var reqObject = req.body;
+    userController.getMacd(reqObject).then(function (success) {
+        res.send(success);
+    },function (faliure) {
+        res.send(faliure)
+    })
+})
 
+router.post('/getStochastic', function (req, res) {
+    var reqObject = req.body;
+    userController.getStochastic(reqObject).then(function (success) {
+        res.send(success);
+    },function (faliure) {
+        res.send(faliure)
+    })
+})
 module.exports = router
