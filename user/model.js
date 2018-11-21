@@ -184,46 +184,72 @@ exports.InsertBulkContractCopy = function(bulkData){
     return deferred.promise;
 }
 //SELECT * from bhavcopycore as BC,bhavput as BP WHERE BC.id = BP.id and BP.id = 700
-exports.getContracts = function(){
+exports.getContracts = function(sql){
     var deferred = Q.defer();
     var connection = mysql.createConnection(config.mysql);
     connection.connect(function(err) {
         if (err) throw err;
         console.log("Connected!");
-        var finalResult = [];
-        var queries = [];
-        queries.push("SELECT id,symbol,edate from bhavcall;");
-        queries.push("SELECT id,symbol,edate from bhavput;");
-        queries.push("SELECT id,symbol,edate from bhavfuture;");			
-        //Make SQL statement:
-        //Execute the SQL statement, with the value array:
-        var forEachAsync = require('forEachAsync').forEachAsync;
-        forEachAsync(queries, function (forEachNext, query, index, queries) {
-            connection.query(query, function (err, result) {
-                if (err){
-                    console.log(err);
-                    connection.end(function(err) {
-                                 // The connection is terminated now
-                                console.log("Connection is terminated now.");
-                                deferred.reject(err);
-                    }); 
-                }else{
-                    finalResult.push(result);
-                    forEachNext();
-                }
-            }); 
-        }).then(function () {
-            console.log('All requests have finished');
-            connection.end(function(err) {
-                if(err) console.log(err);
-                // The connection is terminated now
-                console.log("Connection is terminated now.");
-                deferred.resolve(finalResult);
-            }); 
+
+        connection.query(sql, function (err, result) {
+            if (err){
+                console.log(err);
+                connection.end(function(err) {
+                             // The connection is terminated now
+                            console.log("Connection is terminated now.");
+                            deferred.reject("error occured");
+                }); 
+            }else{
+                //console.log("Number of records inserted: " + result.affectedRows);
+                connection.end(function(err) {
+                            // The connection is terminated now
+                            console.log("Connection is terminated now.");
+                            deferred.resolve(result)
+                            //next();
+                }); 
+            }
         });
     });
     return deferred.promise;
 }
+    // var deferred = Q.defer();
+    // var connection = mysql.createConnection(config.mysql);
+    // connection.connect(function(err) {
+    //     if (err) throw err;
+    //     console.log("Connected!");
+    //     var finalResult = [];
+    //     var queries = [];
+    //     queries.push("SELECT DISTINCT id,symbol,edate from bhavcall;");
+    //     queries.push("SELECT DISTINCT id,symbol,edate from bhavput;");
+    //     queries.push("SELECT DISTINCT id,symbol,edate from bhavfuture;");			
+    //     //Make SQL statement:
+    //     //Execute the SQL statement, with the value array:
+    //     var forEachAsync = require('forEachAsync').forEachAsync;
+    //     forEachAsync(queries, function (forEachNext, query, index, queries) {
+    //         connection.query(query, function (err, result) {
+    //             if (err){
+    //                 console.log(err);
+    //                 connection.end(function(err) {
+    //                              // The connection is terminated now
+    //                             console.log("Connection is terminated now.");
+    //                             deferred.reject(err);
+    //                 }); 
+    //             }else{
+    //                 finalResult.push(result);
+    //                 forEachNext();
+    //             }
+    //         }); 
+    //     }).then(function () {
+    //         console.log('All requests have finished');
+    //         connection.end(function(err) {
+    //             if(err) console.log(err);
+    //             // The connection is terminated now
+    //             console.log("Connection is terminated now.");
+    //             deferred.resolve(finalResult);
+    //         }); 
+    //     });
+    // });
+    // return deferred.promise;
 
 
 exports.getChart = function(sql,values){

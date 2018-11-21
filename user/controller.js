@@ -49,9 +49,16 @@ exports.populateContractTables = function () {
 	return deferred.promise;
 };
 
-exports.getContracts = function () {
+exports.getContracts = function (reqObj) {
 	var deferred = Q.defer();
-	userService.getContracts().then(function (success) {
+	if(!reqObj.contractId){
+		var response = {
+			status :403,
+			message:'Param "contractId" missing or invlaid'
+		}
+		deferred.reject(response);
+	}
+	userService.getContracts(reqObj.contractId).then(function (success) {
 		var response = {
 			status :200,
 			message:success
@@ -70,13 +77,6 @@ exports.getContracts = function () {
 exports.getChart = function (reqObject) {
 	var deferred = Q.defer();
 	//validations!!!!
-	if(!reqObject.id){
-		var response = {
-			status :403,
-			message:'Param "id" missing or invlaid'
-		}
-		deferred.reject(response);
-	}
 	if(!reqObject.symbol){
 		var response = {
 			status :403,

@@ -278,9 +278,19 @@ exports.populateContractTables = function(){
 	return deferred.promise;
 }
 
-exports.getContracts = function(){
+exports.getContracts = function(contractId){
 	var deferred = Q.defer();
-	userModel.getContracts().then(function(success){
+	var sql = null;
+	if(contractId == "CE"){
+		sql = "SELECT DISTINCT symbol,edate from bhavcall;"
+	}
+	if(contractId == "PE"){
+		sql = "SELECT DISTINCT symbol,edate from bhavput;"
+	}
+	if(contractId == "XX"){
+		sql = "SELECT DISTINCT symbol,edate from bhavfuture;"
+	}
+	userModel.getContracts(sql).then(function(success){
 		deferred.resolve(success);
 	},function(error){
 		console.error(error);

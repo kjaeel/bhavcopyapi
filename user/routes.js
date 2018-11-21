@@ -38,7 +38,7 @@ router.get('/populateContractTables', function (req, res) {
 })
 
 router.get('/getContracts', function (req, res) {
-  userController.getContracts().then(function (success) {
+  userController.getContracts(req.query).then(function (success) {
       res.send(success);
   },function (faliure) {
       res.send(faliure)
