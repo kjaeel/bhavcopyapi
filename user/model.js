@@ -1,6 +1,7 @@
  var Q = require('q');
  var  config = require('../config')
  var mysql = require('mysql');
+ var sma = require('sma');
 
 exports.bulkInsertBhavCopy = function(bulkArr){
     var deferred = Q.defer();
@@ -315,7 +316,7 @@ exports.getVolumeAndPrClose = function(values){
                                         }); 
                                     }else{
                                         var volume = future[0].volume + put[0].volume + result[0].volume
-                                        var pr_close = pr_close;
+                                        var pr_close = null;
                                         if(prClose && prClose.length){
                                             pr_close = prClose[0].close;
                                         }else{
@@ -470,24 +471,26 @@ exports.getAvg = function(values){
                         avgArr1.push(result[i].close)// result.slice(-5);
                         avgArr3.push(result[i].close)
                     }
-                    avgArr1 = avgArr1.slice(-5);
-                    avgArr3 = avgArr3.slice(-15);
-                    if(avgArr1.length >= 5){
-                        for (let i = 0; i < avgArr1.length; i++) {
-                            avgSum1 =  avgSum1 + avgArr1[i];
-                        }
-                    }
-                    if(avgArr3.length >=15){
-                        for (let i = 0; i < avgArr3.length; i++) {
-                            avgSum3 =  avgSum3 + avgArr3[i];
-                        }
-                    }
-                    var avg1 = avgSum1/5;
-                    var avg3 = avgSum3/15;
+                    avgArr1 = sma(avgArr1, 5);
+                    avgArr3 = sma(avgArr3,15);
+                    // avgArr1 = avgArr1.slice(-5);
+                    // avgArr3 = avgArr3.slice(-15);
+                    // if(avgArr1.length >= 5){
+                    //     for (let i = 0; i < avgArr1.length; i++) {
+                    //         avgSum1 =  avgSum1 + avgArr1[i];
+                    //     }
+                    // }
+                    // if(avgArr3.length >=15){
+                    //     for (let i = 0; i < avgArr3.length; i++) {
+                    //         avgSum3 =  avgSum3 + avgArr3[i];
+                    //     }
+                    // }
+                    //var avg1 = avgSum1/5;
+                    //var avg3 = avgSum3/15;
                     connection.end(function(err) {
                         // The connection is terminated now
                         console.log("Connection is terminated now.");
-                        deferred.resolve({'avg1' : avg1 , 'avg3' : avg3 });
+                        deferred.resolve({'avg1' : avgArr1 , 'avg3' : avgArr3 });
                         //next();
                     });
                 }else{

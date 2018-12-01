@@ -8,7 +8,7 @@ exports.fetchDailyBhavCopy = function(day){
 	var deferred = Q.defer();
 	var request = require('request');
 	var fs = require('fs');
-	var today = new Date(2018,10,day);
+	var today = new Date(2018,9,day);
 	var year = today.getFullYear();
 	var date = today.getDate();
 	date = pad(date);
@@ -21,7 +21,6 @@ exports.fetchDailyBhavCopy = function(day){
 		, sequence = Sequence.create()
 		, err
 		;
-	
 		sequence
 		.then(function (next) {
 			//zip download code
@@ -370,10 +369,10 @@ exports.getChart = function(reqObject){
 				//fall = close - pr-close	
 				var fall = success[i].close - data.prClose; // change this
 				success[i]['fall'] = fall; 
-				success[i]['average1'] = avg.avg1.toFixed(2);
-				success[i]['average3'] = avg.avg3.toFixed(2); // change this
-				success[i]['high-52'] = Math.max(...high); 
-				success[i]['low-52'] = Math.min(...low);	
+				success[i]['average1'] = avg.avg1;
+				success[i]['average3'] = avg.avg3; // change this
+				success[i]['high52'] = Math.max(...high); 
+				success[i]['low52'] = Math.min(...low);	
 			}
 			deferred.resolve(success);
 		  });
@@ -385,8 +384,13 @@ exports.getChart = function(reqObject){
 
 exports.getMacd = function(reqObject){
 	var deferred = Q.defer();
-	var macd = reqObject.average1 - reqObject.average3;
-	deferred.resolve({"macd" : macd});
+	var macd = [];
+	reqObject.forEach(element => {
+		if(element.average1 > 0 && element.average1 > element.average3){
+			macd.push({"macd" : element.average1 - element.average3, "timestamp" : element.timestamp});
+		}
+	});
+	deferred.resolve(macd);
     return deferred.promise;
 }
 
@@ -408,9 +412,10 @@ exports.getStochastic = function(success){
 			var stochastic = ((success[i].close - lowestLow)/(highestHigh - lowestLow)*100)
 			resObj.push({ "stochastic": stochastic.toFixed(2), "timestamp" : success[i].timestamp });
 			stochasticCounter++;
-		}else{
-			resObj.push({ "stochastic": 0, "timestamp" : success[i].timestamp });
 		}
+		// }else{
+		// 	resObj.push({ "stochastic": 0, "timestamp" : success[i].timestamp });
+		// }
 		
 	}
 	deferred.resolve(resObj);

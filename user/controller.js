@@ -214,7 +214,24 @@ exports.updatePortfolio = function (reqObject) {
 };
 
 exports.getMacd = function(reqObject){
-    var deferred = Q.defer();
+	var deferred = Q.defer();
+	reqObject.forEach(element => {
+		if(!element.average1){
+			var response = {
+				status :403,
+				message:'Param "average1" missing or invlaid'
+			}
+			deferred.reject(response);
+		}
+		if(!element.average3){
+			var response = {
+				status :403,
+				message:'Param "average3" missing or invlaid'
+			}
+			deferred.reject(response);
+		}
+	});
+	
 	userService.getMacd(reqObject).then(function(success){
 		deferred.resolve(success);
 	},function(error){
