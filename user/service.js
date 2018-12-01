@@ -3,12 +3,13 @@ var userModel = require('./model')
 var fs = require('fs');
 var request = require('request');
 var  config = require('../config')
+var loginUserModel = require('./user-model')
 
 exports.fetchDailyBhavCopy = function(day){
 	var deferred = Q.defer();
 	var request = require('request');
 	var fs = require('fs');
-	var today = new Date(2018,9,day);
+	var today = new Date(2018,10,day);
 	var year = today.getFullYear();
 	var date = today.getDate();
 	date = pad(date);
@@ -481,4 +482,37 @@ function yesterday() {
 	var d = new Date();
 	let yesterday = d.setDate(d.getDate() - 1);
 	return yesterday;
+}
+
+exports.saveUser = function(userReqObj){
+    var deferred = Q.defer();
+	loginUserModel.saveUser(userReqObj).then(function(success){
+		deferred.resolve(success);
+	},function(error){
+		console.error(error);
+		deferred.reject("error occured");
+	})
+    return deferred.promise;
+}
+
+exports.getUser = function(user_id){
+	var deferred = Q.defer();
+	loginUserModel.getUser(user_id).then(function(success){
+		deferred.resolve(success);
+	},function(error){
+		console.error(error);
+		deferred.reject("error occured");
+	})
+    return deferred.promise;
+}
+
+exports.login = function(userReqObj){
+    var deferred = Q.defer();
+	loginUserModel.userLogin(userReqObj).then(function(success){
+		deferred.resolve(success);
+	},function(error){
+		console.error(error);
+		deferred.reject(error);
+	})
+    return deferred.promise;
 }

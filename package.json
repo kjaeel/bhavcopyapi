@@ -28,6 +28,8 @@
     "express": "^4.16.3",
     "extract-zip": "^1.6.7",
     "forEachAsync": "^3.0.0",
+    "jsonwebtoken": "^8.4.0",
+    "moment": "^2.22.2",
     "mysql": "^2.16.0",
     "q": "^1.5.1",
     "quick-sort": "^0.2.1",
@@ -35,6 +37,7 @@
     "rquest": "^0.1.0",
     "sequence": "^3.0.0",
     "sma": "^0.1.1",
-    "uniqid": "^5.0.3"
+    "uniqid": "^5.0.3",
+    "uuid": "^3.3.2"
   }
 }

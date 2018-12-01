@@ -3,6 +3,35 @@ var crypto = require('crypto')
 , key = 'abcdefghijklmnop'
 , iv = 'fdsfds85435nfdfs';
 
+exports.jsonWriter = function (message, statusCode, res) {
+	if(!res) {
+		var res = this.res;
+	}
+	var messageJSON = JSON.stringify(message);
+
+	try {
+		res.set("Connection", "close");
+		res.contentType('json');
+	} catch (e) {
+		console.log(e);
+	}
+
+	if (statusCode) {
+		//console.timeEnd(res.req.originalUrl);
+		try {
+			res.status(statusCode).end(messageJSON);
+		} catch (e) {
+			res.end(messageJSON);
+		}
+	} else {
+		res.end(messageJSON);
+	}
+
+	message.data = [];
+	message.error = 0;
+};
+
+
 exports.isEmpty =  function (obj) {
     for(var prop in obj) {
         if(obj.hasOwnProperty(prop))
@@ -47,6 +76,7 @@ exports.getServerPath = function (req) {
 }
 
 exports.jwt_secret = "1ZRiukvqIucljaEGvUDGujuVLUsNGK7v0deAlQe4lRvwsLjYnDG7WLPIw05gfxf";
+exports.uuidKey = '1b671a64-40d5-491e-99b0-da01ff1f3341';
 
 exports.encryptAES = function(text) {
  var cipher = crypto.createCipheriv('aes-128-cbc', key, iv)

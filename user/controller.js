@@ -251,3 +251,114 @@ exports.getStochastic = function(reqObject){
 	})
     return deferred.promise;
 }
+
+exports.saveUser = function (reqObject) {
+	var deferred = Q.defer();
+	//validations!!!!
+	if(!reqObject.name){
+		var response = {
+			status :403,
+			message:'Param "name" missing or invlaid'
+		}
+		deferred.reject(response);
+	}
+	if(!reqObject.email){
+		var response = {
+			status :403,
+			message:'Param "email" missing or invlaid'
+		}
+		deferred.reject(response);
+	}
+	
+	if(!reqObject.password){
+		var response = {
+			status :403,
+			message:'Param "password" missing or invlaid'
+		}
+		deferred.reject(response);
+	}
+	
+	if(!reqObject.mobile){
+		var response = {
+			status :403,
+			message:'Param "mobile" missing or invlaid'
+		}
+		deferred.reject(response);
+	}
+	userService.saveUser(reqObject).then(function (success) {
+		var response = {
+			status :200,
+			message:success
+		}
+		deferred.resolve(response)
+	},function (faliure) {
+		var response = {
+			status :401,
+			message:faliure
+		}
+		deferred.reject(response)
+	})
+	return deferred.promise;
+};
+
+exports.getUser = function (user_id) {
+	var deferred = Q.defer();
+	//validations!!!!
+	if(!user_id){
+		var response = {
+			status :403,
+			message:'Param "user_id" missing or invlaid'
+		}
+		deferred.reject(response);
+	}
+
+	userService.getUser(user_id).then(function (success) {
+		var response = {
+			status :200,
+			message:success
+		}
+		deferred.resolve(response)
+	},function (faliure) {
+		var response = {
+			status :401,
+			message:faliure
+		}
+		deferred.reject(response)
+	})
+	return deferred.promise;
+};
+
+exports.login = function (userDetails) {
+	var deferred = Q.defer();
+	//validations!!!!
+	if(!userDetails.email){
+		var response = {
+			status :403,
+			message:'Param "email" missing or invlaid'
+		}
+		deferred.reject(response);
+	}
+	
+	if(!userDetails.password){
+		var response = {
+			status :403,
+			message:'Param "password" missing or invlaid'
+		}
+		deferred.reject(response);
+	}
+
+	userService.login(userDetails).then(function (success) {
+		var response = {
+			status :200,
+			message:success
+		}
+		deferred.resolve(response)
+	},function (faliure) {
+		var response = {
+			status :401,
+			message:faliure
+		}
+		deferred.reject(response)
+	})
+	return deferred.promise;
+};
